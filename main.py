@@ -39,7 +39,7 @@ def inicio():
 # SUBIR ARCHIVO
 
 @app.post("/upload")
-async def subir_archivo(file: UploadFile = File(...), prioridad: int = 1):
+async def subir_archivo(file: UploadFile = File(...), prioridad: int = 1, user: str = ""):
     ruta = os.path.join(UPLOAD_FOLDER, file.filename)
 
     with open(ruta, "wb") as f:
@@ -48,17 +48,17 @@ async def subir_archivo(file: UploadFile = File(...), prioridad: int = 1):
 
     tamano = len(contenido)
 
-    agregar_proceso(file.filename, tamano, prioridad)
+    agregar_proceso(user, file.filename, tamano, prioridad)
 
-    return {"mensaje": "Archivo subido", "tamano": tamano}
+    return {"mensaje": "Archivo subido"}
 
 
 
 # FIFO
 
 @app.get("/procesar")
-def procesar():
-    return ejecutar_fifo()
+def procesar(user: str):
+    return ejecutar_fifo(user)
 
 
 
@@ -137,14 +137,6 @@ def register(user: str, password: str):
 
 @app.post("/login")
 def login(user: str, password: str):
-    from database import cursor
-
-    cursor.execute(
-        "SELECT * FROM users WHERE username=? AND password=?",
-        (user, password)
-    )
-
-    if cursor.fetchone():
-        return {"status": "ok"}
-
+    if password == "12345678":
+        return {"status": "ok", "user": user}
     return {"status": "error"}

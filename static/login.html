@@ -1,16 +1,37 @@
-<input id="user" placeholder="Usuario">
-<input id="pass" type="password" placeholder="Contraseña">
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Login</title>
+</head>
+
+<body style="text-align:center; margin-top:100px; font-family:Arial;">
+
+<h2>Iniciar Sesión</h2>
+
+<input id="user" placeholder="Usuario"><br><br>
+<input id="pass" type="password" placeholder="Contraseña"><br><br>
+
 <button onclick="login()">Entrar</button>
 
 <script>
 function login() {
-    let u = document.getElementById("user").value;
-    let p = document.getElementById("pass").value;
+    let user = document.getElementById("user").value;
+    let pass = document.getElementById("pass").value;
 
-    if (u === "admin" && p === "1234") {
+    //  contraseña global
+    if (pass === "12345678" && user !== "") {
+
+        //  guardar usuario (CLAVE DEL SISTEMA)
+        localStorage.setItem("user", user);
+
+        //  redirigir a la app
         window.location.href = "/web";
+
     } else {
-        alert("Credenciales incorrectas");
+        alert("Usuario o contraseña incorrectos");
     }
 }
 </script>
+
+</body>
+</html>

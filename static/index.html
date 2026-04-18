@@ -3,22 +3,18 @@
 <head>
     <title>Servidor Inteligente</title>
 
-    <style>
+<style>
 body {
     margin: 0;
     padding: 20px;
-
     background-image: url("/static/miproyecto.jpg");
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
-
     font-family: Arial, sans-serif;
     color: white;
-
     display: flex;
     justify-content: center;
-
     min-height: 100vh;
 }
 
@@ -27,22 +23,8 @@ body {
     padding: 30px;
     border-radius: 15px;
     text-align: center;
-
     width: 90%;
     max-width: 500px;
-
-    animation: aparecer 1s ease;
-}
-
-@keyframes aparecer {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
 }
 
 input, button {
@@ -53,20 +35,12 @@ input, button {
     border: none;
 }
 
-button {
-    cursor: pointer;
-    font-weight: bold;
-    transition: 0.3s;
-}
-
 button:hover {
-    transform: scale(1.05);
     background: #00bcd4;
     color: black;
 }
 
 pre {
-    text-align: left;
     background: black;
     padding: 10px;
     border-radius: 10px;
@@ -80,7 +54,19 @@ pre {
 
 <body>
 
+<script>
+let user = localStorage.getItem("user");
+
+// 🔥 PROTEGER ACCESO
+if (!user) {
+    window.location.href = "/static/login.html";
+}
+</script>
+
 <div class="contenedor">
+
+<h2>Usuario: <span id="usuarioActual"></span></h2>
+<button onclick="logout()">Cerrar sesión</button>
 
 <h1>Servidor Inteligente</h1>
 
@@ -123,6 +109,16 @@ pre {
 </div>
 
 <script>
+document.getElementById("usuarioActual").textContent = user;
+
+// 🔥 LOGOUT
+function logout() {
+    localStorage.removeItem("user");
+    window.location.href = "/static/login.html";
+}
+</script>
+
+<script>
 async function subirArchivo(e) {
     e.preventDefault();
 
@@ -132,21 +128,17 @@ async function subirArchivo(e) {
     let formData = new FormData();
     formData.append("file", file);
 
-    // 🔥 CORREGIDO (sin localhost)
-    let response = await fetch(`/upload?prioridad=${prioridad}`, {
+    await fetch(`/upload?user=${user}&prioridad=${prioridad}`, {
         method: "POST",
         body: formData
     });
 
-    let data = await response.json();
-    document.getElementById("resultado").textContent =
-        JSON.stringify(data, null, 2);
+    alert("Archivo subido");
 }
-
 document.getElementById("form").addEventListener("submit", subirArchivo);
 
 async function fifo() {
-    let response = await fetch("/procesar");
+    let response = await fetch(`/procesar?user=${user}`);
     let data = await response.json();
     document.getElementById("resultado").textContent = JSON.stringify(data, null, 2);
     dibujarGrafica(data);
@@ -154,20 +146,15 @@ async function fifo() {
 
 async function roundRobin() {
     let quantum = prompt("Quantum:", "2");
-
-    // 🔥 CORREGIDO
-    let response = await fetch(`/procesar_rr?quantum=${quantum}`);
+    let response = await fetch(`/procesar_rr?user=${user}&quantum=${quantum}`);
     let data = await response.json();
-
     document.getElementById("resultado").textContent = JSON.stringify(data, null, 2);
     dibujarGrafica(data);
 }
 
 async function prioridad() {
-    // 🔥 CORREGIDO
-    let response = await fetch("/procesar_prioridad");
+    let response = await fetch(`/procesar_prioridad?user=${user}`);
     let data = await response.json();
-
     document.getElementById("resultado").textContent = JSON.stringify(data, null, 2);
     dibujarGrafica(data);
 }
@@ -175,7 +162,7 @@ async function prioridad() {
 
 <script>
 async function verHistorial() {
-    let response = await fetch("/historial");
+    let response = await fetch(`/historial?user=${user}`);
     let data = await response.json();
 
     let tbody = document.querySelector("#tablaHistorial tbody");
@@ -190,11 +177,9 @@ async function verHistorial() {
         </tr>`;
     });
 }
-</script>
 
-<script>
 async function limpiarHistorial() {
-    await fetch("/historial", { method: "DELETE" });
+    await fetch(`/historial?user=${user}`, { method: "DELETE" });
     alert("Historial limpiado");
     verHistorial();
 }
@@ -222,59 +207,10 @@ function dibujarGrafica(data) {
         },
         options: {
             indexAxis: 'y',
-            responsive: true,
-            plugins: {
-                legend: { labels: { color: "white" } }
-            },
-            scales: {
-                x: { ticks: { color: "white" } },
-                y: { ticks: { color: "white" } }
-            }
+            responsive: true
         }
     });
 }
-</script>
-
-<script>
-let ejecutando = false;
-
-async function actualizarSistema() {
-    if (ejecutando) return;
-    ejecutando = true;
-
-    try {
-        let response = await fetch("/procesar");
-        let data = await response.json();
-
-        document.getElementById("resultado").textContent =
-            JSON.stringify(data, null, 2);
-
-        dibujarGrafica(data);
-
-        let hist = await fetch("/historial");
-        let histData = await hist.json();
-
-        let tbody = document.querySelector("#tablaHistorial tbody");
-        tbody.innerHTML = "";
-
-        histData.forEach(p => {
-            tbody.innerHTML += `
-            <tr>
-                <td>${p.nombre}</td>
-                <td>${p.tamano}</td>
-                <td>${p.prioridad}</td>
-            </tr>`;
-        });
-
-    } catch (error) {
-        console.error(error);
-    }
-
-    ejecutando = false;
-}
-
-actualizarSistema();
-setInterval(actualizarSistema, 4000);
 </script>
 
 </body>

@@ -1,33 +1,40 @@
-#  MEMORIA LOCAL (reemplazo de Redis)
-cola_memoria = []
-historial_memoria = []
-resultados_memoria = []
+#  ESTRUCTURAS POR USUARIO
+colas_por_usuario = {}
+historial_por_usuario = {}
+resultados_por_usuario = {}
 
 
+# =========================
 # AGREGAR PROCESO
-
-def agregar_proceso(nombre, tamano, prioridad):
+# =========================
+def agregar_proceso(usuario, nombre, tamano, prioridad):
     proceso = {
         "nombre": nombre,
         "tamano": tamano,
         "prioridad": prioridad
     }
 
-    # Cola en memoria
-    cola_memoria.append(proceso)
+    # Crear estructuras si no existen
+    if usuario not in colas_por_usuario:
+        colas_por_usuario[usuario] = []
+        historial_por_usuario[usuario] = []
+        resultados_por_usuario[usuario] = []
 
-    # Historial
-    historial_memoria.append(proceso)
+    # Guardar en cola e historial
+    colas_por_usuario[usuario].append(proceso)
+    historial_por_usuario[usuario].append(proceso)
 
 
-
+# =========================
 # FIFO
+# =========================
+def ejecutar_fifo(usuario):
+    cola = colas_por_usuario.get(usuario, [])
 
-def ejecutar_fifo():
     resultados = []
     tiempo_actual = 0
 
-    for proceso in cola_memoria:
+    for proceso in cola:
         inicio = tiempo_actual
         fin = inicio + proceso["tamano"]
 
@@ -38,20 +45,18 @@ def ejecutar_fifo():
         }
 
         resultados.append(resultado)
-
-        # 🔥 Guardar resultados en memoria
-        resultados_memoria.append(resultado)
+        resultados_por_usuario[usuario].append(resultado)
 
         tiempo_actual = fin
 
     return resultados
 
 
-
+# =========================
 # ROUND ROBIN
-
-def ejecutar_round_robin(quantum):
-    cola = cola_memoria.copy()
+# =========================
+def ejecutar_round_robin(usuario, quantum):
+    cola = colas_por_usuario.get(usuario, []).copy()
 
     resultados = []
     tiempo_actual = 0
@@ -74,7 +79,7 @@ def ejecutar_round_robin(quantum):
                 }
 
                 resultados.append(resultado)
-                resultados_memoria.append(resultado)
+                resultados_por_usuario[usuario].append(resultado)
 
                 tiempo_actual = fin
                 restantes[nombre] -= ejecucion
@@ -82,11 +87,11 @@ def ejecutar_round_robin(quantum):
     return resultados
 
 
-
+# =========================
 # PRIORIDADES
-
-def ejecutar_prioridades():
-    cola = sorted(cola_memoria, key=lambda x: x["prioridad"])
+# =========================
+def ejecutar_prioridades(usuario):
+    cola = sorted(colas_por_usuario.get(usuario, []), key=lambda x: x["prioridad"])
 
     resultados = []
     tiempo_actual = 0
@@ -103,29 +108,30 @@ def ejecutar_prioridades():
         }
 
         resultados.append(resultado)
-        resultados_memoria.append(resultado)
+        resultados_por_usuario[usuario].append(resultado)
 
         tiempo_actual = fin
 
     return resultados
 
 
-
+# =========================
 # HISTORIAL
+# =========================
+def obtener_historial(usuario):
+    return historial_por_usuario.get(usuario, [])
 
-def obtener_historial():
-    return historial_memoria
 
-
-
+# =========================
 # RESULTADOS
-
-def obtener_resultados():
-    return resultados_memoria
+# =========================
+def obtener_resultados(usuario):
+    return resultados_por_usuario.get(usuario, [])
 
 
 
 # LIMPIAR HISTORIAL
-
-def limpiar_historial():
-    historial_memoria.clear()
+# =========================
+def limpiar_historial(usuario):
+    if usuario in historial_por_usuario:
+        historial_por_usuario[usuario].clear()
