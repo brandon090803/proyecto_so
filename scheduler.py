@@ -1,35 +1,43 @@
-#  ESTRUCTURAS POR USUARIO
+# 🔥 ESTRUCTURAS POR USUARIO
 colas_por_usuario = {}
 historial_por_usuario = {}
 resultados_por_usuario = {}
 
 
+# =========================
+#  ASEGURAR USUARIO
+# =========================
+def asegurar_usuario(usuario):
+    if usuario not in colas_por_usuario:
+        colas_por_usuario[usuario] = []
+        historial_por_usuario[usuario] = []
+        resultados_por_usuario[usuario] = []
 
-# AGREGAR PROCESO
 
+# =========================
+#  AGREGAR PROCESO
+# =========================
 def agregar_proceso(usuario, nombre, tamano, prioridad):
+    asegurar_usuario(usuario)
+
     proceso = {
         "nombre": nombre,
         "tamano": tamano,
         "prioridad": prioridad
     }
 
-    # Crear estructuras si no existen
-    if usuario not in colas_por_usuario:
-        colas_por_usuario[usuario] = []
-        historial_por_usuario[usuario] = []
-        resultados_por_usuario[usuario] = []
-
-    # Guardar en cola e historial
     colas_por_usuario[usuario].append(proceso)
     historial_por_usuario[usuario].append(proceso)
 
 
-
-# FIFO
-
+# =========================
+#  FIFO
+# =========================
 def ejecutar_fifo(usuario):
-    cola = colas_por_usuario.get(usuario, [])
+    asegurar_usuario(usuario)
+
+    cola = colas_por_usuario[usuario]
+    resultados_por_usuario[usuario] = []  # 🔥 limpiar resultados anteriores
 
     resultados = []
     tiempo_actual = 0
@@ -52,11 +60,14 @@ def ejecutar_fifo(usuario):
     return resultados
 
 
-
+# =========================
 # ROUND ROBIN
-
+# =========================
 def ejecutar_round_robin(usuario, quantum):
-    cola = colas_por_usuario.get(usuario, []).copy()
+    asegurar_usuario(usuario)
+
+    cola = colas_por_usuario[usuario].copy()
+    resultados_por_usuario[usuario] = []
 
     resultados = []
     tiempo_actual = 0
@@ -87,11 +98,14 @@ def ejecutar_round_robin(usuario, quantum):
     return resultados
 
 
-
-# PRIORIDADES
-
+# =========================
+#  PRIORIDADES
+# =========================
 def ejecutar_prioridades(usuario):
-    cola = sorted(colas_por_usuario.get(usuario, []), key=lambda x: x["prioridad"])
+    asegurar_usuario(usuario)
+
+    cola = sorted(colas_por_usuario[usuario], key=lambda x: x["prioridad"])
+    resultados_por_usuario[usuario] = []
 
     resultados = []
     tiempo_actual = 0
@@ -115,23 +129,25 @@ def ejecutar_prioridades(usuario):
     return resultados
 
 
-
-# HISTORIAL
-
+# =========================
+#  HISTORIAL
+# =========================
 def obtener_historial(usuario):
-    return historial_por_usuario.get(usuario, [])
+    asegurar_usuario(usuario)
+    return historial_por_usuario[usuario]
 
 
-
-# RESULTADOS
-
+# =========================
+#  RESULTADOS
+# =========================
 def obtener_resultados(usuario):
-    return resultados_por_usuario.get(usuario, [])
+    asegurar_usuario(usuario)
+    return resultados_por_usuario[usuario]
 
 
-
-# LIMPIAR HISTORIAL
-
+# =========================
+#  LIMPIAR HISTORIAL
+# =========================
 def limpiar_historial(usuario):
-    if usuario in historial_por_usuario:
-        historial_por_usuario[usuario].clear()
+    asegurar_usuario(usuario)
+    historial_por_usuario[usuario] = []
