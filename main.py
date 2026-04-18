@@ -1,11 +1,24 @@
 from fastapi import FastAPI, UploadFile, File
-import os
-from scheduler import agregar_proceso, ejecutar_fifo
-from scheduler import ejecutar_round_robin
-from gantt import generar_gantt
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
+import os
+
+#  IMPORTACIONES CORRECTAS (sin Redis)
+from scheduler import (
+    agregar_proceso,
+    ejecutar_fifo,
+    ejecutar_round_robin,
+    ejecutar_prioridades,
+    obtener_historial,
+    obtener_resultados,
+    limpiar_historial
+)
+
+from gantt import generar_gantt
 
 app = FastAPI()
+
+#  carpeta static
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 UPLOAD_FOLDER = "uploads"
@@ -13,9 +26,17 @@ UPLOAD_FOLDER = "uploads"
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
 
+
+
+# INICIO
+
 @app.get("/")
 def inicio():
     return {"mensaje": "Servidor funcionando"}
+
+
+
+# SUBIR ARCHIVO
 
 @app.post("/upload")
 async def subir_archivo(file: UploadFile = File(...), prioridad: int = 1):
@@ -25,26 +46,39 @@ async def subir_archivo(file: UploadFile = File(...), prioridad: int = 1):
         contenido = await file.read()
         f.write(contenido)
 
-    tamano = len(contenido)  
+    tamano = len(contenido)
 
     agregar_proceso(file.filename, tamano, prioridad)
 
-    return {"mensaje": "Archivo subido", "tamano": tamano}  
+    return {"mensaje": "Archivo subido", "tamano": tamano}
+
+
+
+# FIFO
 
 @app.get("/procesar")
 def procesar():
-    resultado = ejecutar_fifo()
-    return resultado
+    return ejecutar_fifo()
+
+
+
+# ROUND ROBIN
 
 @app.get("/procesar_rr")
 def procesar_rr(quantum: int = 2):
-    resultado = ejecutar_round_robin(quantum)
-    return resultado
+    return ejecutar_round_robin(quantum)
+
+
+
+# PRIORIDADES
 
 @app.get("/procesar_prioridad")
 def procesar_prioridad():
-    from scheduler import ejecutar_prioridades
     return ejecutar_prioridades()
+
+
+
+# GANTT
 
 @app.get("/gantt_fifo")
 def gantt_fifo():
@@ -52,33 +86,38 @@ def gantt_fifo():
     generar_gantt(resultado)
     return resultado
 
-from fastapi.responses import FileResponse
+
+
+# WEB
 
 @app.get("/web")
 def web():
     return FileResponse("static/index.html")
 
+
+
+# HISTORIAL (SIN REDIS)
+
 @app.get("/historial")
 def historial():
-    import json
-    from redis_client import r
+    return obtener_historial()
 
-    datos = r.lrange("historial", 0, -1)
-    return [json.loads(d) for d in datos]
 
 @app.delete("/historial")
-def limpiar_historial():
-    from redis_client import r
-    r.delete("historial")
+def borrar_historial():
+    limpiar_historial()
     return {"mensaje": "Historial eliminado"}
+
+
+
+# RESULTADOS (SIN REDIS)
 
 @app.get("/resultados")
 def resultados():
-    import json
-    from redis_client import r
-    datos = r.lrange("resultados", 0, -1)
-    return [json.loads(d) for d in datos]
+    return obtener_resultados()
 
+
+# REGISTRO
 
 @app.post("/register")
 def register(user: str, password: str):
@@ -92,7 +131,9 @@ def register(user: str, password: str):
 
     return {"msg": "Usuario creado"}
 
-#  LOGIN
+
+
+# LOGIN
 
 @app.post("/login")
 def login(user: str, password: str):
@@ -107,4 +148,3 @@ def login(user: str, password: str):
         return {"status": "ok"}
 
     return {"status": "error"}
-
