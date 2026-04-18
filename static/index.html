@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Servidor Inteligente</title>
+
+    <style>
+body {
+    margin: 0;
+    padding: 20px;
+
+    background-image: url("/static/miproyecto.jpg");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+
+    font-family: Arial, sans-serif;
+    color: white;
+
+    display: flex;
+    justify-content: center;
+
+    min-height: 100vh;
+}
+
+.contenedor {
+    background: rgba(0, 0, 0, 0.7);
+    padding: 30px;
+    border-radius: 15px;
+    text-align: center;
+
+    width: 90%;
+    max-width: 500px;
+
+    animation: aparecer 1s ease;
+}
+
+@keyframes aparecer {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+input, button {
+    margin: 10px;
+    padding: 10px;
+    width: 90%;
+    border-radius: 8px;
+    border: none;
+}
+
+button {
+    cursor: pointer;
+    font-weight: bold;
+    transition: 0.3s;
+}
+
+button:hover {
+    transform: scale(1.05);
+    background: #00bcd4;
+    color: black;
+}
+
+pre {
+    text-align: left;
+    background: black;
+    padding: 10px;
+    border-radius: 10px;
+    max-height: 200px;
+    overflow: auto;
+}
+</style>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+
+<div class="contenedor">
+
+    <h1>Servidor Inteligente</h1>
+
+    <h2>Subir Archivo</h2>
+
+    <form id="form">
+        <input type="file" id="file"><br>
+        <input type="number" id="prioridad" placeholder="Prioridad"><br>
+        <button type="submit">Subir</button>
+    </form>
+
+    <hr>
+
+    <h2>Algoritmos</h2>
+
+    <button onclick="fifo()">FIFO</button>
+    <button onclick="roundRobin()">Round Robin</button>
+    <button onclick="prioridad()">Prioridades</button>
+    <button onclick="verHistorial()">Ver Historial</button>
+    <button onclick="limpiarHistorial()">Limpiar Historial</button>
+
+    <h3>Resultado</h3>
+    <pre id="resultado"></pre>
+    <h3>Gráfica</h3>
+    <canvas id="grafica"></canvas>
+    <h3>Historial</h3>
+<table id="tablaHistorial" border="1" style="width:100%; color:white;">
+    <thead>
+        <tr>
+            <th>Archivo</th>
+            <th>Tamaño</th>
+            <th>Prioridad</th>
+        </tr>
+    </thead>
+    <tbody></tbody>
+</table>
+
+</div>
+
+<script>
+async function subirArchivo(e) {
+    e.preventDefault();
+
+    let file = document.getElementById("file").files[0];
+    let prioridad = document.getElementById("prioridad").value;
+
+    let formData = new FormData();
+    formData.append("file", file);
+
+    let response = await fetch(`http://127.0.0.1:8000/upload?prioridad=${prioridad}`, {
+        method: "POST",
+        body: formData
+    });
+
+    let data = await response.json();
+    document.getElementById("resultado").textContent = JSON.stringify(data, null, 2);
+}
+
+document.getElementById("form").addEventListener("submit", subirArchivo);
+
+async function fifo() {
+    let response = await fetch("http://127.0.0.1:8000/procesar");
+    let data = await response.json();
+
+    document.getElementById("resultado").textContent = JSON.stringify(data, null, 2);
+
+    dibujarGrafica(data);
+}
+
+
+async function roundRobin() {
+    let quantum = prompt("Quantum:", "2");
+    let response = await fetch(`http://127.0.0.1:8000/procesar_rr?quantum=${quantum}`);
+    let data = await response.json();
+
+    document.getElementById("resultado").textContent = JSON.stringify(data, null, 2);
+
+    dibujarGrafica(data);
+}
+
+async function prioridad() {
+    let response = await fetch("http://127.0.0.1:8000/procesar_prioridad");
+    let data = await response.json();
+
+    document.getElementById("resultado").textContent = JSON.stringify(data, null, 2);
+
+    dibujarGrafica(data);
+}
+</script>
+
+<script>
+async function verHistorial() {
+    let response = await fetch("/historial");
+    let data = await response.json();
+
+    let tbody = document.querySelector("#tablaHistorial tbody");
+    tbody.innerHTML = "";
+
+    data.forEach(p => {
+        let fila = `
+            <tr>
+                <td>${p.nombre}</td>
+                <td>${p.tamano}</td>
+                <td>${p.prioridad}</td>
+            </tr>
+        `;
+        tbody.innerHTML += fila;
+    });
+}
+</script>
+
+<script>
+async function limpiarHistorial() {
+    await fetch("/historial", { method: "DELETE" });
+    alert("Historial limpiado");
+    verHistorial();
+}
+</script>
+
+<script>
+let grafica = null;
+
+function dibujarGrafica(data) {
+    let labels = data.map(p => p.archivo);
+    let tiempos = data.map(p => p.fin - p.inicio);
+
+    const ctx = document.getElementById('grafica').getContext('2d');
+
+    if (grafica) {
+        grafica.destroy();
+    }
+
+    grafica = new Chart(ctx, {
+    type: 'bar',
+    data: {
+        labels: labels,
+        datasets: [{
+            label: 'Duración',
+            data: tiempos
+        }]
+    },
+    options: {
+        indexAxis: 'y', // 🔥 esto lo vuelve tipo Gantt (horizontal)
+        responsive: true,
+        plugins: {
+            legend: {
+                labels: {
+                    color: "white"
+                }
+            }
+        },
+        scales: {
+            x: {
+                ticks: { color: "white" }
+            },
+            y: {
+                ticks: { color: "white" }
+            }
+        }
+    }
+});
+
+}
+</script>
+
+<script>
+let ejecutando = false; // evita llamadas simultáneas
+
+async function actualizarSistema() {
+    if (ejecutando) return;
+    ejecutando = true;
+
+    try {
+        //  PROCESOS
+        let response = await fetch("/procesar");
+        if (!response.ok) throw new Error("Error en /procesar");
+
+        let data = await response.json();
+
+        document.getElementById("resultado").textContent =
+            JSON.stringify(data, null, 2);
+
+        dibujarGrafica(data);
+
+        //  HISTORIAL
+        let hist = await fetch("/historial");
+        if (!hist.ok) throw new Error("Error en /historial");
+
+        let histData = await hist.json();
+
+        let tbody = document.querySelector("#tablaHistorial tbody");
+        if (tbody) {
+            tbody.innerHTML = "";
+
+            histData.forEach(p => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${p.nombre}</td>
+                        <td>${p.tamano}</td>
+                        <td>${p.prioridad}</td>
+                    </tr>
+                `;
+            });
+        }
+
+    } catch (error) {
+        console.error("Error en actualización:", error);
+    }
+
+    ejecutando = false;
+}
+
+//  ejecutar inmediatamente al cargar
+actualizarSistema();
+
+//  ejecutar cada 4 segundos
+setInterval(actualizarSistema, 4000);
+</script>
+
+</body>
+</html>

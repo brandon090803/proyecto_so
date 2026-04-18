@@ -1,0 +1,16 @@
+<input id="user" placeholder="Usuario">
+<input id="pass" type="password" placeholder="Contraseña">
+<button onclick="login()">Entrar</button>
+
+<script>
+function login() {
+    let u = document.getElementById("user").value;
+    let p = document.getElementById("pass").value;
+
+    if (u === "admin" && p === "1234") {
+        window.location.href = "/web";
+    } else {
+        alert("Credenciales incorrectas");
+    }
+}
+</script>
