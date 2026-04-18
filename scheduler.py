@@ -4,9 +4,9 @@ historial_por_usuario = {}
 resultados_por_usuario = {}
 
 
-# =========================
+
 # AGREGAR PROCESO
-# =========================
+
 def agregar_proceso(usuario, nombre, tamano, prioridad):
     proceso = {
         "nombre": nombre,
@@ -25,9 +25,9 @@ def agregar_proceso(usuario, nombre, tamano, prioridad):
     historial_por_usuario[usuario].append(proceso)
 
 
-# =========================
+
 # FIFO
-# =========================
+
 def ejecutar_fifo(usuario):
     cola = colas_por_usuario.get(usuario, [])
 
@@ -52,9 +52,9 @@ def ejecutar_fifo(usuario):
     return resultados
 
 
-# =========================
+
 # ROUND ROBIN
-# =========================
+
 def ejecutar_round_robin(usuario, quantum):
     cola = colas_por_usuario.get(usuario, []).copy()
 
@@ -87,9 +87,9 @@ def ejecutar_round_robin(usuario, quantum):
     return resultados
 
 
-# =========================
+
 # PRIORIDADES
-# =========================
+
 def ejecutar_prioridades(usuario):
     cola = sorted(colas_por_usuario.get(usuario, []), key=lambda x: x["prioridad"])
 
@@ -115,23 +115,23 @@ def ejecutar_prioridades(usuario):
     return resultados
 
 
-# =========================
+
 # HISTORIAL
-# =========================
+
 def obtener_historial(usuario):
     return historial_por_usuario.get(usuario, [])
 
 
-# =========================
+
 # RESULTADOS
-# =========================
+
 def obtener_resultados(usuario):
     return resultados_por_usuario.get(usuario, [])
 
 
 
 # LIMPIAR HISTORIAL
-# =========================
+
 def limpiar_historial(usuario):
     if usuario in historial_por_usuario:
         historial_por_usuario[usuario].clear()
