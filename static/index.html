@@ -47,6 +47,15 @@ pre {
     max-height: 200px;
     overflow: auto;
 }
+
+table {
+    margin-top: 10px;
+    border-collapse: collapse;
+}
+
+th, td {
+    padding: 8px;
+}
 </style>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -55,9 +64,9 @@ pre {
 <body>
 
 <script>
+// 🔐 PROTEGER ACCESO
 let user = localStorage.getItem("user");
 
-// 🔥 PROTEGER ACCESO
 if (!user) {
     window.location.href = "/static/login.html";
 }
@@ -73,8 +82,8 @@ if (!user) {
 <h2>Subir Archivo</h2>
 
 <form id="form">
-    <input type="file" id="file"><br>
-    <input type="number" id="prioridad" placeholder="Prioridad"><br>
+    <input type="file" id="file" required><br>
+    <input type="number" id="prioridad" placeholder="Prioridad" required><br>
     <button type="submit">Subir</button>
 </form>
 
@@ -111,7 +120,7 @@ if (!user) {
 <script>
 document.getElementById("usuarioActual").textContent = user;
 
-// 🔥 LOGOUT
+// 🔓 LOGOUT
 function logout() {
     localStorage.removeItem("user");
     window.location.href = "/static/login.html";
@@ -119,6 +128,7 @@ function logout() {
 </script>
 
 <script>
+// 📤 SUBIR ARCHIVO
 async function subirArchivo(e) {
     e.preventDefault();
 
@@ -128,42 +138,65 @@ async function subirArchivo(e) {
     let formData = new FormData();
     formData.append("file", file);
 
-    await fetch(`/upload?user=${user}&prioridad=${prioridad}`, {
+    let response = await fetch(`/upload?user=${user}&prioridad=${prioridad}`, {
         method: "POST",
         body: formData
     });
 
-    alert("Archivo subido");
-}
-document.getElementById("form").addEventListener("submit", subirArchivo);
+    let data = await response.json();
 
+    document.getElementById("resultado").textContent =
+        JSON.stringify(data, null, 2);
+
+    alert("Archivo subido");
+
+    // 🔥 ACTUALIZA HISTORIAL
+    verHistorial();
+}
+
+document.getElementById("form").addEventListener("submit", subirArchivo);
+</script>
+
+<script>
+// ⚙️ ALGORITMOS
 async function fifo() {
     let response = await fetch(`/procesar?user=${user}`);
     let data = await response.json();
-    document.getElementById("resultado").textContent = JSON.stringify(data, null, 2);
+    document.getElementById("resultado").textContent =
+        JSON.stringify(data, null, 2);
     dibujarGrafica(data);
 }
 
 async function roundRobin() {
     let quantum = prompt("Quantum:", "2");
+
     let response = await fetch(`/procesar_rr?user=${user}&quantum=${quantum}`);
     let data = await response.json();
-    document.getElementById("resultado").textContent = JSON.stringify(data, null, 2);
+
+    document.getElementById("resultado").textContent =
+        JSON.stringify(data, null, 2);
+
     dibujarGrafica(data);
 }
 
 async function prioridad() {
     let response = await fetch(`/procesar_prioridad?user=${user}`);
     let data = await response.json();
-    document.getElementById("resultado").textContent = JSON.stringify(data, null, 2);
+
+    document.getElementById("resultado").textContent =
+        JSON.stringify(data, null, 2);
+
     dibujarGrafica(data);
 }
 </script>
 
 <script>
+// 📜 HISTORIAL
 async function verHistorial() {
     let response = await fetch(`/historial?user=${user}`);
     let data = await response.json();
+
+    console.log("HISTORIAL:", data);
 
     let tbody = document.querySelector("#tablaHistorial tbody");
     tbody.innerHTML = "";
@@ -186,6 +219,7 @@ async function limpiarHistorial() {
 </script>
 
 <script>
+// 📊 GRÁFICA
 let grafica = null;
 
 function dibujarGrafica(data) {
@@ -211,6 +245,12 @@ function dibujarGrafica(data) {
         }
     });
 }
+</script>
+
+<script>
+// 🔥 CARGA INICIAL + ACTUALIZACIÓN AUTOMÁTICA
+verHistorial();
+setInterval(verHistorial, 3000);
 </script>
 
 </body>
