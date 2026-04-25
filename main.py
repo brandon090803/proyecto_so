@@ -27,23 +27,32 @@ if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
 
 
-# =========================
-#  INICIO → LOGIN
-# =========================
+
+#  INICIO - LOGIN
+
 @app.get("/")
 def inicio():
     return FileResponse("static/login.html")
 
 
-# =========================
+
 #  SUBIR ARCHIVO
-# =========================
+
 @app.post("/upload")
 async def subir_archivo(
     file: UploadFile = File(...),
     prioridad: int = 1,
     user: str = ""
 ):
+    #  VALIDAR USUARIO
+    if not user or user.strip() == "":
+        return {"error": "Usuario no enviado"}
+
+    user = user.strip()
+
+    #  DEBUG 
+    print("USUARIO RECIBIDO:", user)
+
     ruta = os.path.join(UPLOAD_FOLDER, file.filename)
 
     with open(ruta, "wb") as f:
@@ -52,38 +61,43 @@ async def subir_archivo(
 
     tamano = len(contenido)
 
+    #  ASEGURAR QUE SE GUARDE CON EL USUARIO CORRECTO
     agregar_proceso(user, file.filename, tamano, prioridad)
 
-    return {"mensaje": "Archivo subido"}
+    return {
+        "mensaje": "Archivo subido",
+        "usuario": user,   #  para verificar
+        "tamano": tamano
+    }
 
 
-# =========================
+
 #  FIFO
-# =========================
+
 @app.get("/procesar")
 def procesar(user: str):
     return ejecutar_fifo(user)
 
 
-# =========================
+
 #  ROUND ROBIN
-# =========================
+
 @app.get("/procesar_rr")
 def procesar_rr(user: str, quantum: int = 2):
     return ejecutar_round_robin(user, quantum)
 
 
-# =========================
+
 #  PRIORIDADES
-# =========================
+
 @app.get("/procesar_prioridad")
 def procesar_prioridad(user: str):
     return ejecutar_prioridades(user)
 
 
-# =========================
+
 #  GANTT
-# =========================
+
 @app.get("/gantt_fifo")
 def gantt_fifo(user: str):
     resultado = ejecutar_fifo(user)
@@ -91,17 +105,17 @@ def gantt_fifo(user: str):
     return resultado
 
 
-# =========================
+
 #  WEB PRINCIPAL
-# =========================
+
 @app.get("/web")
 def web():
     return FileResponse("static/index.html")
 
 
-# =========================
+
 #  HISTORIAL
-# =========================
+
 @app.get("/historial")
 def historial(user: str):
     return obtener_historial(user)
@@ -113,17 +127,17 @@ def borrar_historial(user: str):
     return {"mensaje": "Historial eliminado"}
 
 
-# =========================
-# 📦 RESULTADOS
-# =========================
+
+#  RESULTADOS
+
 @app.get("/resultados")
 def resultados(user: str):
     return obtener_resultados(user)
 
 
-# =========================
+
 #  REGISTRO (opcional)
-# =========================
+
 @app.post("/register")
 def register(user: str, password: str):
     from database import cursor, conn
@@ -137,9 +151,9 @@ def register(user: str, password: str):
     return {"msg": "Usuario creado"}
 
 
-# =========================
+
 #  LOGIN
-# =========================
+
 @app.post("/login")
 def login(user: str, password: str):
     if password == "12345678":
