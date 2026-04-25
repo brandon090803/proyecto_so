@@ -83,7 +83,11 @@ if (!user) {
 
 <form id="form">
     <input type="file" id="file" required><br>
-    <input type="number" id="prioridad" placeholder="Prioridad" required><br>
+    <input type="number" id="prioridad" placeholder="Prioridad" min="0" required><br>
+
+    <small style="color: #00e5ff;">
+    ⚠ Solo números positivos (mayores o iguales a 0)
+    </small><br>
     <button type="submit">Subir</button>
 </form>
 
@@ -120,7 +124,7 @@ if (!user) {
 <script>
 document.getElementById("usuarioActual").textContent = user;
 
-// 🔓 LOGOUT
+//  LOGOUT
 function logout() {
     localStorage.removeItem("user");
     window.location.href = "/static/login.html";
@@ -128,7 +132,7 @@ function logout() {
 </script>
 
 <script>
-// 📤 SUBIR ARCHIVO
+//  SUBIR ARCHIVO
 async function subirArchivo(e) {
     e.preventDefault();
 
@@ -150,7 +154,7 @@ async function subirArchivo(e) {
 
     alert("Archivo subido");
 
-    // 🔥 ACTUALIZA HISTORIAL
+    //  ACTUALIZA HISTORIAL
     verHistorial();
 }
 
@@ -168,7 +172,15 @@ async function fifo() {
 }
 
 async function roundRobin() {
-    let quantum = prompt("Quantum:", "2");
+    let quantum = prompt(
+    "Ingrese el Quantum\n\n⚠ Recomendación:\nUsar valores menores a 2000 si el computador no es muy potente",
+    "2000"
+);
+
+if (!quantum || quantum <= 0) {
+    alert("Ingrese un número válido mayor a 0");
+    return;
+}
 
     let response = await fetch(`/procesar_rr?user=${user}&quantum=${quantum}`);
     let data = await response.json();
